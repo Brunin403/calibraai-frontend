@@ -1,7 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const COLORS = { high: '#dc2626', medium: '#eab308', low: '#16a34a' };
-//const LABELS = { high: 'Alta', medium: 'Média', low: 'Baixa' };
 
 export default function Charts({ data }) {
   const chartData = [
