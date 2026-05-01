@@ -25,6 +25,10 @@ export default function InstrumentsPage() {
   const [sortField, setSortField] = useState('tag');
   const [sortOrder, setSortOrder] = useState('asc');
 
+  // Determina se a coluna Ações deve ser exibida
+  const showActions = user?.role === 'admin' || user?.role === 'analyst';
+  const colSpan = showActions ? 6 : 5;
+
   useEffect(() => {
     loadInstruments();
   }, []);
@@ -64,7 +68,6 @@ export default function InstrumentsPage() {
     }
   };
 
-  // Função de filtragem cumulativa
   const getFilteredInstruments = () => {
     let filtered = [...instruments];
 
@@ -90,7 +93,6 @@ export default function InstrumentsPage() {
       filtered = filtered.filter(i => i.type === filterType);
     }
 
-    // Ordenação
     filtered.sort((a, b) => {
       const valA = (a[sortField] || '').toString().toLowerCase();
       const valB = (b[sortField] || '').toString().toLowerCase();
@@ -100,7 +102,6 @@ export default function InstrumentsPage() {
     return filtered;
   };
 
-  // Limpar todos os filtros
   const clearFilters = () => {
     setFilterTag('');
     setFilterDescription('');
@@ -249,13 +250,15 @@ export default function InstrumentsPage() {
               >
                 Status {sortField === 'operationalStatus' && (sortOrder === 'asc' ? '▲' : '▼')}
               </th>
-              <th className="px-4 py-2 text-left font-medium text-gray-600">Ações</th>
+              {showActions && (
+                <th className="px-4 py-2 text-left font-medium text-gray-600">Ações</th>
+              )}
             </tr>
           </thead>
           <tbody>
             {getFilteredInstruments().length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-gray-500">
+                <td colSpan={colSpan} className="text-center py-8 text-gray-500">
                   Nenhum instrumento encontrado
                 </td>
               </tr>
@@ -288,24 +291,26 @@ export default function InstrumentsPage() {
                           (instrument.operationalStatus || 'ativo').slice(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-2">
-                    {(user?.role === 'admin' || user?.role === 'analyst') && (
-                      <button
-                        onClick={() => setEditingInstrument(instrument)}
-                        className="text-blue-600 hover:text-blue-800 mr-2"
-                      >
-                        ✏️ Editar
-                      </button>
-                    )}
-                    {user?.role === 'admin' && (
-                      <button
-                        onClick={() => handleDelete(instrument._id, instrument.tag)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        🗑️ Excluir
-                      </button>
-                    )}
-                  </td>
+                  {showActions && (
+                    <td className="px-4 py-2">
+                      {(user?.role === 'admin' || user?.role === 'analyst') && (
+                        <button
+                          onClick={() => setEditingInstrument(instrument)}
+                          className="text-blue-600 hover:text-blue-800 mr-2"
+                        >
+                          ✏️ Editar
+                        </button>
+                      )}
+                      {user?.role === 'admin' && (
+                        <button
+                          onClick={() => handleDelete(instrument._id, instrument.tag)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          🗑️ Excluir
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))
             )}
