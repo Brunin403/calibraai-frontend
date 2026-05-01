@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Restaurar sessão ao carregar a página
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -15,7 +16,7 @@ export function AuthProvider({ children }) {
         setUser({
           token,
           role: payload.role,
-          name: payload.name,
+          name: payload.name,           // ← agora captura o nome do payload
           id: payload.userId,
           tenantId: payload.tenantId
         });
@@ -31,7 +32,7 @@ export function AuthProvider({ children }) {
     const res = await api.post('/auth/login', { email, password });
     const { token, user: userData } = res.data;
     localStorage.setItem('token', token);
-    setUser({ ...userData, token });
+    setUser({ ...userData, token });    // userData já inclui name
     return userData;
   };
 
