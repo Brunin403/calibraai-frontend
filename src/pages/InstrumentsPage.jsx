@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import InstrumentForm from '../components/Instruments/InstrumentForm';
 import ImportModal from '../components/Instruments/ImportModal';
+import EditInstrumentModal from '../components/Instruments/EditInstrumentModal';
 
 export default function InstrumentsPage() {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ export default function InstrumentsPage() {
   const [showNewInstrument, setShowNewInstrument] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [editingInstrument, setEditingInstrument] = useState(null);
 
   // Estados para filtros cumulativos
   const [filterTag, setFilterTag] = useState('');
@@ -38,6 +40,8 @@ export default function InstrumentsPage() {
     }
   };
 
+
+  
   const handleInstrumentCreated = (newInstrument) => {
     setInstruments(prev => [newInstrument, ...prev]);
     setShowNewInstrument(false);
@@ -92,12 +96,33 @@ export default function InstrumentsPage() {
     setFilterStatus('');
     setFilterType('');
   };
+  //tratar atualização
+  const handleInstrumentUpdated = (updatedInstrument) => {
+  setInstruments(prev => prev.map(i => i._id === updatedInstrument._id ? updatedInstrument : i));
+  };
+  const handleDelete = async (id, tag) => {
+  if (!window.confirm(`Excluir ${tag}?`)) return;
+  const reason = prompt('Motivo da exclusão (opcional):') || 'Não informado';
+  try {
+    await api.delete(`/instruments/${id}`, { data: { reason } });
+    setInstruments(prev => prev.filter(i => i._id !== id));
+  } catch (err) {
+    alert('Erro ao excluir: ' + (err.response?.data?.error || err.message));
+  }
+};
 
   if (loading) {
     return <div className="p-6 text-gray-500">Carregando instrumentos...</div>;
   }
-
+{editingInstrument && (
+  <EditInstrumentModal
+    instrument={editingInstrument}
+    onClose={() => setEditingInstrument(null)}
+    onUpdated={handleInstrumentUpdated}
+  />
+)}
   return (
+    
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Instrumentos</h2>
@@ -238,7 +263,7 @@ export default function InstrumentsPage() {
           <tbody>
             {getFilteredInstruments().length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-gray-500">
+                <td colSpan={6} className="text-center py-8 text-gray-500">
                   Nenhum instrumento encontrado
                 </td>
               </tr>
@@ -270,6 +295,25 @@ export default function InstrumentsPage() {
                         : (instrument.operationalStatus || 'ativo').charAt(0).toUpperCase() +
                           (instrument.operationalStatus || 'ativo').slice(1)}
                     </span>
+                  
+                  </td>
+                  <td className="px-4 py-2">
+                    {(user?.role === 'admin' || user?.role === 'analyst') && (
+                      <button
+                        onClick={() => setEditingInstrument(instrument)}
+                        className="text-blue-600 hover:text-blue-800 mr-2"
+                      >
+                        ✏️ Editar
+                      </button>
+                    )}
+                    {user?.role === 'admin' && (
+                      <button
+                        onClick={() => handleDelete(instrument._id, instrument.tag)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        🗑️ Excluir
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
