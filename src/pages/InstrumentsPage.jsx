@@ -40,8 +40,6 @@ export default function InstrumentsPage() {
     }
   };
 
-
-  
   const handleInstrumentCreated = (newInstrument) => {
     setInstruments(prev => [newInstrument, ...prev]);
     setShowNewInstrument(false);
@@ -51,11 +49,25 @@ export default function InstrumentsPage() {
     loadInstruments();
   };
 
+  const handleInstrumentUpdated = (updatedInstrument) => {
+    setInstruments(prev => prev.map(i => i._id === updatedInstrument._id ? updatedInstrument : i));
+  };
+
+  const handleDelete = async (id, tag) => {
+    if (!window.confirm(`Excluir ${tag}?`)) return;
+    const reason = prompt('Motivo da exclusão (opcional):') || 'Não informado';
+    try {
+      await api.delete(`/instruments/${id}`, { data: { reason } });
+      setInstruments(prev => prev.filter(i => i._id !== id));
+    } catch (err) {
+      alert('Erro ao excluir: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   // Função de filtragem cumulativa
   const getFilteredInstruments = () => {
     let filtered = [...instruments];
 
-    // Filtros cumulativos (E lógico)
     if (filterTag) {
       filtered = filtered.filter(i =>
         i.tag.toLowerCase().includes(filterTag.toLowerCase())
@@ -96,33 +108,12 @@ export default function InstrumentsPage() {
     setFilterStatus('');
     setFilterType('');
   };
-  //tratar atualização
-  const handleInstrumentUpdated = (updatedInstrument) => {
-  setInstruments(prev => prev.map(i => i._id === updatedInstrument._id ? updatedInstrument : i));
-  };
-  const handleDelete = async (id, tag) => {
-  if (!window.confirm(`Excluir ${tag}?`)) return;
-  const reason = prompt('Motivo da exclusão (opcional):') || 'Não informado';
-  try {
-    await api.delete(`/instruments/${id}`, { data: { reason } });
-    setInstruments(prev => prev.filter(i => i._id !== id));
-  } catch (err) {
-    alert('Erro ao excluir: ' + (err.response?.data?.error || err.message));
-  }
-};
 
   if (loading) {
     return <div className="p-6 text-gray-500">Carregando instrumentos...</div>;
   }
-{editingInstrument && (
-  <EditInstrumentModal
-    instrument={editingInstrument}
-    onClose={() => setEditingInstrument(null)}
-    onUpdated={handleInstrumentUpdated}
-  />
-)}
+
   return (
-    
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Instrumentos</h2>
@@ -258,6 +249,7 @@ export default function InstrumentsPage() {
               >
                 Status {sortField === 'operationalStatus' && (sortOrder === 'asc' ? '▲' : '▼')}
               </th>
+              <th className="px-4 py-2 text-left font-medium text-gray-600">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -295,7 +287,6 @@ export default function InstrumentsPage() {
                         : (instrument.operationalStatus || 'ativo').charAt(0).toUpperCase() +
                           (instrument.operationalStatus || 'ativo').slice(1)}
                     </span>
-                  
                   </td>
                   <td className="px-4 py-2">
                     {(user?.role === 'admin' || user?.role === 'analyst') && (
@@ -332,6 +323,15 @@ export default function InstrumentsPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Modal de edição */}
+      {editingInstrument && (
+        <EditInstrumentModal
+          instrument={editingInstrument}
+          onClose={() => setEditingInstrument(null)}
+          onUpdated={handleInstrumentUpdated}
+        />
       )}
 
       <ImportModal
