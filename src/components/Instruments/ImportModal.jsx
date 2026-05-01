@@ -6,7 +6,6 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-  const [progress, setProgress] = useState('');
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -22,7 +21,6 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
     }
     setLoading(true);
     setError('');
-    setProgress('Processando arquivo...');
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -30,12 +28,9 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(res.data);
-      setProgress('');
       if (onImportComplete) onImportComplete();
-      // Não fechar automaticamente para que o usuário veja o resultado
     } catch (err) {
       setError(err.response?.data?.error || 'Erro ao importar');
-      setProgress('');
     } finally {
       setLoading(false);
     }
@@ -57,7 +52,16 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
           />
 
           {error && <p className="text-red-500 mb-4">{error}</p>}
-          {progress && <p className="text-blue-500 mb-4">{progress}</p>}
+
+          {/* Barra de progresso indeterminada */}
+          {loading && (
+            <div className="mb-4">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                <div className="bg-blue-600 h-2.5 rounded-full animate-progress-indeterminate" />
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Importando...</p>
+            </div>
+          )}
 
           {result && (
             <div className="mb-4 p-4 bg-gray-50 rounded-lg text-sm">
