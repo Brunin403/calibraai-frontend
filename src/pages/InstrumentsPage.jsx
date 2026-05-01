@@ -1,138 +1,117 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-
-const columns = [
-  { key: 'tag', label: 'TAG' },
-  { key: 'description', label: 'Descrição' },
-  { key: 'sector', label: 'Setor' },
-  { key: 'type', label: 'Tipo' },
-  { key: 'operationalStatus', label: 'Status Oper.' },
-  { key: 'calibrationStatus', label: 'Status Calib.' },
-  { key: 'nextCalibrationDate', label: 'Próxima Calib.' },
-];
-
-const statusColors = {
-  ok: 'bg-green-100 text-green-800',
-  attention: 'bg-yellow-100 text-yellow-800',
-  overdue: 'bg-red-100 text-red-800',
-};
-
-const operationalLabels = {
-  ativo: 'Ativo',
-  desativado: 'Desativado',
-  backup: 'Backup',
-};
+import InstrumentForm from '../components/Instruments/InstrumentForm';
+import ImportModal from '../components/Instruments/ImportModal';
 
 export default function InstrumentsPage() {
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [instruments, setInstruments] = useState([]);
+  const [showImport, setShowImport] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filterCalStatus, setFilterCalStatus] = useState('');
-  const [filterOpStatus, setFilterOpStatus] = useState('');
-
-  const fetchInstruments = () => {
-    setLoading(true);
-    const params = {};
-    if (search) params.search = search;
-    if (filterCalStatus) params.calibrationStatus = filterCalStatus;
-    if (filterOpStatus) params.operationalStatus = filterOpStatus;
-
-    api.get('/instruments', { params })
-      .then(res => setInstruments(res.data))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  };
 
   useEffect(() => {
-    fetchInstruments();
-    // eslint-disable-next-line
-  }, [search, filterCalStatus, filterOpStatus]);
+    loadInstruments();
+  }, []);
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('pt-BR');
+  const loadInstruments = async () => {
+    try {
+      const res = await api.get('/instruments');
+      setInstruments(res.data);
+    } catch (err) {
+      console.error('Erro ao carregar instrumentos:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-800 mb-6">Instrumentos</h2>
+  const handleInstrumentCreated = (newInstrument) => {
+    setInstruments(prev => [newInstrument, ...prev]);
+  };
 
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Buscar por TAG ou descrição..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="px-4 py-2 border border-slate-300 rounded-lg text-sm w-64"
-        />
-        <select
-          value={filterCalStatus}
-          onChange={e => setFilterCalStatus(e.target.value)}
-          className="px-4 py-2 border border-slate-300 rounded-lg text-sm"
-        >
-          <option value="">Todos status calib.</option>
-          <option value="ok">Em dia</option>
-          <option value="attention">Atenção</option>
-          <option value="overdue">Vencido</option>
-        </select>
-        <select
-          value={filterOpStatus}
-          onChange={e => setFilterOpStatus(e.target.value)}
-          className="px-4 py-2 border border-slate-300 rounded-lg text-sm"
-        >
-          <option value="">Todos status oper.</option>
-          <option value="ativo">Ativo</option>
-          <option value="desativado">Desativado</option>
-          <option value="backup">Backup</option>
-        </select>
+  const handleImportComplete = () => {
+    loadInstruments();
+  };
+
+  if (loading) {
+    return <div className="p-6 text-gray-500">Carregando instrumentos...</div>;
+  }
+
+  return (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Instrumentos</h2>
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => setShowImport(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+          >
+            📥 Importar Excel
+          </button>
+        )}
       </div>
 
-      {/* Tabela */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              {columns.map(col => (
-                <th key={col.key} className="text-left px-6 py-3 font-semibold text-slate-600">
-                  {col.label}
-                </th>
-              ))}
+      {user?.role === 'admin' && (
+        <InstrumentForm onInstrumentCreated={handleInstrumentCreated} />
+      )}
+
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="text-left px-4 py-3 font-medium text-gray-600">TAG</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Descrição</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Setor</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Tipo</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr><td colSpan={8} className="text-center py-8 text-slate-400">Carregando...</td></tr>
-            )}
-            {!loading && instruments.length === 0 && (
-              <tr><td colSpan={8} className="text-center py-8 text-slate-400">Nenhum instrumento encontrado.</td></tr>
-            )}
-            {!loading && instruments.map(instr => (
-              <tr key={instr._id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"onClick={() => navigate(`/instruments/${instr._id}`)}>
-                <td className="px-6 py-4 font-medium text-slate-800">{instr.tag}</td>
-                <td className="px-6 py-4">{instr.description || '-'}</td>
-                <td className="px-6 py-4">{instr.sector || '-'}</td>
-                <td className="px-6 py-4">{instr.type || '-'}</td>
-                <td className="px-6 py-4">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                    {operationalLabels[instr.operationalStatus] || instr.operationalStatus}
-                  </span>
+            {instruments.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center py-8 text-gray-500">
+                  Nenhum instrumento cadastrado
                 </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[instr.calibrationStatus] || 'bg-slate-100 text-slate-700'}`}>
-                    {instr.calibrationStatus === 'ok' ? 'Em dia' :
-                     instr.calibrationStatus === 'attention' ? 'Atenção' :
-                     instr.calibrationStatus === 'overdue' ? 'Vencido' : instr.calibrationStatus}
-                  </span>
-                </td>
-                <td className="px-6 py-4">{formatDate(instr.nextCalibrationDate)}</td>
               </tr>
-            ))}
+            ) : (
+              instruments.map(instrument => (
+                <tr key={instrument._id} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-3 font-mono text-sm">{instrument.tag}</td>
+                  <td className="px-4 py-3">{instrument.description}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {instrument.sector || instrument.location || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-sm capitalize">{instrument.type}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        instrument.operationalStatus === 'ativo'
+                          ? 'bg-green-100 text-green-800'
+                          : instrument.operationalStatus === 'desativado'
+                          ? 'bg-gray-100 text-gray-800'
+                          : instrument.operationalStatus === 'backup'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      {instrument.operationalStatus === 'manutencao'
+                        ? 'Manutenção'
+                        : (instrument.operationalStatus || 'ativo').charAt(0).toUpperCase() +
+                          (instrument.operationalStatus || 'ativo').slice(1)}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      <ImportModal
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        onImportComplete={handleImportComplete}
+      />
     </div>
   );
 }
