@@ -28,9 +28,8 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(res.data);
-      if (onImportComplete && res.data.created > 0) {
-        onImportComplete();
-      }
+        if (onImportComplete) onImportComplete();
+        onClose();
     } catch (err) {
       setError(err.response?.data?.error || 'Erro ao importar');
     } finally {

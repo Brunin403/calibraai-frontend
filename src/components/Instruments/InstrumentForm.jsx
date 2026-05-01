@@ -21,9 +21,10 @@ export default function InstrumentForm({ onInstrumentCreated }) {
   const loadSectors = async () => {
     try {
       const res = await api.get('/instruments/sectors');
+      console.log('Setores recebidos:', res.data);
       setSectors(res.data);
     } catch (err) {
-      console.error('Erro ao carregar setores:', err);
+      console.error('Erro ao carregar setores:', err.response?.status, err.response?.data);
     }
   };
 

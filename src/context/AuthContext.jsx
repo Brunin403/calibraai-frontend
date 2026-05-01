@@ -8,14 +8,18 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // Ao iniciar, verifica se já existe token salvo e busca dados do usuário
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Opcional: buscar perfil do usuário no backend
-      // api.get('/auth/profile').then(res => setUser(res.data)).catch(() => logout());
-      setUser({ token }); // simplificado: apenas guarda o token
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setUser({ token, role: payload.role, name: payload.name }); // ajuste se o token incluir name
+    } catch (e) {
+      localStorage.removeItem('token');
+      setUser(null);
     }
-    setLoading(false);
+  }
+  setLoading(false);
   }, []);
 
   const login = async (email, password) => {
