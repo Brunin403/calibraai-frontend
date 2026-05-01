@@ -7,19 +7,24 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Ao iniciar, verifica se já existe token salvo e busca dados do usuário
-useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      setUser({ token, role: payload.role, name: payload.name }); // ajuste se o token incluir name
-    } catch (e) {
-      localStorage.removeItem('token');
-      setUser(null);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUser({
+          token,
+          role: payload.role,
+          name: payload.name,
+          id: payload.userId,
+          tenantId: payload.tenantId
+        });
+      } catch (e) {
+        localStorage.removeItem('token');
+        setUser(null);
+      }
     }
-  }
-  setLoading(false);
+    setLoading(false);
   }, []);
 
   const login = async (email, password) => {

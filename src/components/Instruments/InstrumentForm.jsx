@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import SearchableSelect from '../Common/SearchableSelect';
 
-export default function InstrumentForm({ onInstrumentCreated }) {
+export default function InstrumentForm({ onInstrumentCreated, onClose }) {
   const [tag, setTag] = useState('');
   const [description, setDescription] = useState('');
   const [sector, setSector] = useState('');
@@ -21,10 +21,9 @@ export default function InstrumentForm({ onInstrumentCreated }) {
   const loadSectors = async () => {
     try {
       const res = await api.get('/instruments/sectors');
-      console.log('Setores recebidos:', res.data);
       setSectors(res.data);
     } catch (err) {
-      console.error('Erro ao carregar setores:', err.response?.status, err.response?.data);
+      console.error('Erro ao carregar setores:', err);
     }
   };
 
@@ -87,6 +86,7 @@ export default function InstrumentForm({ onInstrumentCreated }) {
       setTagError('');
       setTagValid(false);
       if (onInstrumentCreated) onInstrumentCreated(res.data);
+      if (onClose) onClose(); // fechar modal após sucesso
     } catch (err) {
       setError(err.response?.data?.error || 'Erro ao criar instrumento');
     } finally {
@@ -96,7 +96,14 @@ export default function InstrumentForm({ onInstrumentCreated }) {
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border mb-6">
-      <h3 className="text-lg font-semibold mb-4">Novo Instrumento</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Novo Instrumento</h3>
+        {onClose && (
+          <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            ✕
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>

@@ -6,6 +6,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState('');
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -21,6 +22,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
     }
     setLoading(true);
     setError('');
+    setProgress('Processando arquivo...');
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -28,10 +30,12 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(res.data);
-        if (onImportComplete) onImportComplete();
-        onClose();
+      setProgress('');
+      if (onImportComplete) onImportComplete();
+      // Não fechar automaticamente para que o usuário veja o resultado
     } catch (err) {
       setError(err.response?.data?.error || 'Erro ao importar');
+      setProgress('');
     } finally {
       setLoading(false);
     }
@@ -53,6 +57,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
           />
 
           {error && <p className="text-red-500 mb-4">{error}</p>}
+          {progress && <p className="text-blue-500 mb-4">{progress}</p>}
 
           {result && (
             <div className="mb-4 p-4 bg-gray-50 rounded-lg text-sm">
@@ -62,7 +67,7 @@ export default function ImportModal({ isOpen, onClose, onImportComplete }) {
               {result.errors.length > 0 && (
                 <div className="mt-2">
                   <p className="font-semibold text-red-600">⚠️ Erros ({result.errors.length}):</p>
-                  <ul className="list-disc pl-4">
+                  <ul className="list-disc pl-4 max-h-40 overflow-y-auto">
                     {result.errors.map((err, i) => (
                       <li key={i} className="text-red-500">
                         <strong>{err.tag}</strong>: {err.error}

@@ -8,14 +8,20 @@ export default function InstrumentsPage() {
   const { user } = useAuth();
   const [instruments, setInstruments] = useState([]);
   const [showImport, setShowImport] = useState(false);
+  const [showNewInstrument, setShowNewInstrument] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Estados para filtros e ordenação
-  const [sortField, setSortField] = useState('tag');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [search, setSearch] = useState('');
+  // Estados para filtros cumulativos
+  const [filterTag, setFilterTag] = useState('');
+  const [filterDescription, setFilterDescription] = useState('');
+  const [filterSector, setFilterSector] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('');
+
+  // Estados para ordenação
+  const [sortField, setSortField] = useState('tag');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   useEffect(() => {
     loadInstruments();
@@ -34,19 +40,31 @@ export default function InstrumentsPage() {
 
   const handleInstrumentCreated = (newInstrument) => {
     setInstruments(prev => [newInstrument, ...prev]);
+    setShowNewInstrument(false);
   };
 
   const handleImportComplete = () => {
     loadInstruments();
   };
 
-  // Função para filtrar e ordenar a lista local
+  // Função de filtragem cumulativa
   const getFilteredInstruments = () => {
     let filtered = [...instruments];
 
-    if (search) {
+    // Filtros cumulativos (E lógico)
+    if (filterTag) {
       filtered = filtered.filter(i =>
-        i.tag.toLowerCase().includes(search.toLowerCase())
+        i.tag.toLowerCase().includes(filterTag.toLowerCase())
+      );
+    }
+    if (filterDescription) {
+      filtered = filtered.filter(i =>
+        i.description.toLowerCase().includes(filterDescription.toLowerCase())
+      );
+    }
+    if (filterSector) {
+      filtered = filtered.filter(i =>
+        (i.sector || i.location || '').toLowerCase().includes(filterSector.toLowerCase())
       );
     }
     if (filterStatus) {
@@ -56,14 +74,23 @@ export default function InstrumentsPage() {
       filtered = filtered.filter(i => i.type === filterType);
     }
 
+    // Ordenação
     filtered.sort((a, b) => {
       const valA = (a[sortField] || '').toString().toLowerCase();
       const valB = (b[sortField] || '').toString().toLowerCase();
-      if (sortOrder === 'asc') return valA.localeCompare(valB);
-      else return valB.localeCompare(valA);
+      return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
 
     return filtered;
+  };
+
+  // Limpar todos os filtros
+  const clearFilters = () => {
+    setFilterTag('');
+    setFilterDescription('');
+    setFilterSector('');
+    setFilterStatus('');
+    setFilterType('');
   };
 
   if (loading) {
@@ -74,51 +101,87 @@ export default function InstrumentsPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Instrumentos</h2>
-        {user?.role === 'admin' && (
-          <button
-            onClick={() => setShowImport(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+        <div className="flex gap-2">
+          {user?.role === 'admin' && (
+            <>
+              <button
+                onClick={() => setShowNewInstrument(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                ➕ Novo Instrumento
+              </button>
+              <button
+                onClick={() => setShowImport(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                📥 Importar Excel
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Botão para mostrar/esconder filtros */}
+      <button
+        onClick={() => setShowFilters(!showFilters)}
+        className="mb-4 px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
+      >
+        {showFilters ? '🔽 Ocultar filtros' : '🔍 Filtros'}
+      </button>
+
+      {/* Painel de filtros cumulativos */}
+      {showFilters && (
+        <div className="bg-white border rounded-lg p-4 mb-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+          <input
+            type="text"
+            placeholder="Filtrar TAG..."
+            value={filterTag}
+            onChange={(e) => setFilterTag(e.target.value)}
+            className="px-3 py-2 border rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Filtrar descrição..."
+            value={filterDescription}
+            onChange={(e) => setFilterDescription(e.target.value)}
+            className="px-3 py-2 border rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Filtrar setor..."
+            value={filterSector}
+            onChange={(e) => setFilterSector(e.target.value)}
+            className="px-3 py-2 border rounded-lg"
+          />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-3 py-2 border rounded-lg"
           >
-            📥 Importar Excel
+            <option value="">Todos os status</option>
+            <option value="ativo">Ativo</option>
+            <option value="desativado">Desativado</option>
+            <option value="backup">Backup</option>
+            <option value="manutencao">Manutenção</option>
+          </select>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-3 py-2 border rounded-lg"
+          >
+            <option value="">Todos os tipos</option>
+            <option value="equipamento">Equipamento</option>
+            <option value="instrumento">Instrumento</option>
+            <option value="utensilio">Utensílio</option>
+          </select>
+          <button
+            onClick={clearFilters}
+            className="px-3 py-2 text-sm text-red-600 hover:text-red-800"
+          >
+            Limpar filtros
           </button>
-        )}
-      </div>
-
-      {user?.role === 'admin' && (
-        <InstrumentForm onInstrumentCreated={handleInstrumentCreated} />
+        </div>
       )}
-
-      {/* Filtros */}
-      <div className="flex gap-4 mb-4 flex-wrap">
-        <input
-          type="text"
-          placeholder="Buscar por TAG..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 border rounded-lg"
-        />
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2 border rounded-lg"
-        >
-          <option value="">Todos os status</option>
-          <option value="ativo">Ativo</option>
-          <option value="desativado">Desativado</option>
-          <option value="backup">Backup</option>
-          <option value="manutencao">Manutenção</option>
-        </select>
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="px-3 py-2 border rounded-lg"
-        >
-          <option value="">Todos os tipos</option>
-          <option value="equipamento">Equipamento</option>
-          <option value="instrumento">Instrumento</option>
-          <option value="utensilio">Utensílio</option>
-        </select>
-      </div>
 
       {/* Tabela */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
@@ -214,6 +277,18 @@ export default function InstrumentsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal para novo instrumento */}
+      {showNewInstrument && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="max-w-2xl w-full mx-4">
+            <InstrumentForm
+              onInstrumentCreated={handleInstrumentCreated}
+              onClose={() => setShowNewInstrument(false)}
+            />
+          </div>
+        </div>
+      )}
 
       <ImportModal
         isOpen={showImport}
