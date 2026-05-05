@@ -162,7 +162,7 @@ export default function InstrumentsPage() {
             ) : (
               getFilteredInstruments().map(instrument => (
                 <tr key={instrument._id} className="border-t hover:bg-gray-50">
-                  <td className="px-3 py-1 font-mono text-xs whitespace-nowrap">{instrument.tag}</td>
+                  <td className="px-3 py-1 text-xs whitespace-nowrap">{instrument.tag}</td>
                   <td className="px-3 py-1 text-xs">{instrument.description}</td>
                   <td className="px-3 py-1 text-xs">{instrument.sector || instrument.location || '-'}</td>
                   <td className="px-3 py-1 text-xs capitalize">{instrument.type}</td>
