@@ -2,24 +2,61 @@ import { useState } from 'react';
 import api from '../../services/api';
 
 export default function CalibrationForm({ instrument, onClose, onCreated }) {
-  const [form, setForm] = useState({
-    date: '',
-    result: 'aprovado',
-    supplier: '',
-    certificateNumber: '',
-    error: '',
-    uncertainty: '',
-    instrumentError: '',
-    emp: '',
-    unit: '',
-    notes: '',
-    status: 'concluido',
-  });
+  const [date, setDate] = useState('');
+  const [result, setResult] = useState('aprovado');
+  const [supplier, setSupplier] = useState('');
+  const [certificateNumber, setCertificateNumber] = useState('');
+  const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // Estado para grupos de medição
+  const [groups, setGroups] = useState([
+    {
+      quantity: '',
+      unit: '',
+      points: [{ applied: '', read: '', error: '', uncertainty: '', ok: true }]
+    }
+  ]);
+
+  const addGroup = () => {
+    setGroups([...groups, {
+      quantity: '',
+      unit: '',
+      points: [{ applied: '', read: '', error: '', uncertainty: '', ok: true }]
+    }]);
+  };
+
+  const removeGroup = (index) => {
+    if (groups.length > 1) {
+      setGroups(groups.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateGroup = (index, field, value) => {
+    const updated = [...groups];
+    updated[index][field] = value;
+    setGroups(updated);
+  };
+
+  const addPoint = (groupIndex) => {
+    const updated = [...groups];
+    updated[groupIndex].points.push({ applied: '', read: '', error: '', uncertainty: '', ok: true });
+    setGroups(updated);
+  };
+
+  const removePoint = (groupIndex, pointIndex) => {
+    const updated = [...groups];
+    if (updated[groupIndex].points.length > 1) {
+      updated[groupIndex].points = updated[groupIndex].points.filter((_, i) => i !== pointIndex);
+      setGroups(updated);
+    }
+  };
+
+  const updatePoint = (groupIndex, pointIndex, field, value) => {
+    const updated = [...groups];
+    updated[groupIndex].points[pointIndex][field] = value;
+    setGroups(updated);
   };
 
   const handleSubmit = async (e) => {
@@ -27,24 +64,30 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
     setLoading(true);
     setError('');
     try {
-      const data = {
+      // Converte valores para Number antes de enviar
+      const payload = {
         instrumentId: instrument._id,
-        date: form.date,
-        result: form.result,
-        supplier: form.supplier,
-        certificateNumber: form.certificateNumber,
-        error: parseFloat(form.error) || 0,
-        uncertainty: parseFloat(form.uncertainty) || 0,
-        instrumentError: parseFloat(form.instrumentError) || 0,
-        emp: parseFloat(form.emp) || 0,
-        unit: form.unit,
-        notes: form.notes,
-        status: form.status,
+        date,
+        result,
+        supplier,
+        certificateNumber,
+        notes,
+        measurementGroups: groups.map(group => ({
+          quantity: group.quantity,
+          unit: group.unit,
+          points: group.points.map(p => ({
+            applied: parseFloat(p.applied) || 0,
+            read: parseFloat(p.read) || 0,
+            error: parseFloat(p.error) || 0,
+            uncertainty: parseFloat(p.uncertainty) || 0,
+            ok: p.ok === true || p.ok === 'true' || p.ok === 1
+          }))
+        }))
       };
-      await api.post('/calibrations', data);
+      await api.post('/calibrations', payload);
       onCreated();
     } catch (err) {
-      setError(err.response?.data?.error || 'Erro ao salvar');
+      setError(err.response?.data?.error || 'Erro ao salvar calibração');
     } finally {
       setLoading(false);
     }
@@ -52,63 +95,142 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-dark-800 border border-dark-600 rounded-xl p-5 w-full max-w-md text-white">
+      <div className="bg-dark-800 border border-dark-600 rounded-xl p-5 w-full max-w-2xl text-white max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-bold mb-3">Nova Calibração – {instrument.tag}</h2>
-        <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-          <div>
-            <label className="block text-dark-400 mb-1">Data da calibração *</label>
-            <input type="date" name="date" value={form.date} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" required />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+
+          {/* Dados básicos */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-dark-400 mb-1">Data *</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" required />
+            </div>
             <div>
               <label className="block text-dark-400 mb-1">Resultado</label>
-              <select name="result" value={form.result} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white">
+              <select value={result} onChange={e => setResult(e.target.value)}
+                className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1">
                 <option value="aprovado">Aprovado</option>
                 <option value="reprovado">Reprovado</option>
                 <option value="aprovado_com_restricao">Aprovado c/ restrição</option>
               </select>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-dark-400 mb-1">Fornecedor</label>
-              <input type="text" name="supplier" value={form.supplier} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-dark-400 mb-1">Nº Certificado</label>
-            <input type="text" name="certificateNumber" value={form.certificateNumber} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-dark-400 mb-1">Erro</label>
-              <input type="number" step="any" name="error" value={form.error} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
+              <input type="text" value={supplier} onChange={e => setSupplier(e.target.value)}
+                className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
             </div>
             <div>
-              <label className="block text-dark-400 mb-1">Incerteza</label>
-              <input type="number" step="any" name="uncertainty" value={form.uncertainty} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
+              <label className="block text-dark-400 mb-1">Nº Certificado</label>
+              <input type="text" value={certificateNumber} onChange={e => setCertificateNumber(e.target.value)}
+                className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-dark-400 mb-1">Erro Instrumento</label>
-              <input type="number" step="any" name="instrumentError" value={form.instrumentError} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
-            </div>
-            <div>
-              <label className="block text-dark-400 mb-1">EMP</label>
-              <input type="number" step="any" name="emp" value={form.emp} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-dark-400 mb-1">Unidade</label>
-            <input type="text" name="unit" value={form.unit} onChange={handleChange} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
           </div>
           <div>
             <label className="block text-dark-400 mb-1">Observações</label>
-            <textarea name="notes" value={form.notes} onChange={handleChange} rows={2} className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+              className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
           </div>
+
+          {/* Grupos de medição */}
+          <div className="border-t border-dark-600 pt-3">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-semibold">Pontos de Calibração</h4>
+              <button type="button" onClick={addGroup}
+                className="text-xs bg-accent-blue-dark text-blue-100 px-2 py-1 rounded hover:bg-accent-blue">
+                + Adicionar Grandeza
+              </button>
+            </div>
+
+            {groups.map((group, gi) => (
+              <div key={gi} className="mb-4 border border-dark-600 rounded p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex gap-2 flex-1">
+                    <input
+                      type="text"
+                      placeholder="Grandeza (ex: Temperatura)"
+                      value={group.quantity}
+                      onChange={e => updateGroup(gi, 'quantity', e.target.value)}
+                      className="flex-1 bg-dark-700 border-dark-500 rounded px-2 py-1 text-xs"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Unidade (ex: °C)"
+                      value={group.unit}
+                      onChange={e => updateGroup(gi, 'unit', e.target.value)}
+                      className="w-24 bg-dark-700 border-dark-500 rounded px-2 py-1 text-xs"
+                    />
+                  </div>
+                  {groups.length > 1 && (
+                    <button type="button" onClick={() => removeGroup(gi)}
+                      className="ml-2 text-xs text-accent-red hover:underline">Remover</button>
+                  )}
+                </div>
+
+                <table className="w-full text-xs mb-2">
+                  <thead>
+                    <tr className="text-dark-400 uppercase">
+                      <th className="text-left py-1">Aplicado</th>
+                      <th className="text-left py-1">Lido</th>
+                      <th className="text-left py-1">Erro</th>
+                      <th className="text-left py-1">Incerteza</th>
+                      <th className="text-left py-1">OK</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.points.map((point, pi) => (
+                      <tr key={pi}>
+                        <td className="py-1">
+                          <input type="number" step="any" value={point.applied}
+                            onChange={e => updatePoint(gi, pi, 'applied', e.target.value)}
+                            className="w-16 bg-dark-700 border-dark-500 rounded px-1 py-0.5" />
+                        </td>
+                        <td className="py-1">
+                          <input type="number" step="any" value={point.read}
+                            onChange={e => updatePoint(gi, pi, 'read', e.target.value)}
+                            className="w-16 bg-dark-700 border-dark-500 rounded px-1 py-0.5" />
+                        </td>
+                        <td className="py-1">
+                          <input type="number" step="any" value={point.error}
+                            onChange={e => updatePoint(gi, pi, 'error', e.target.value)}
+                            className="w-16 bg-dark-700 border-dark-500 rounded px-1 py-0.5" />
+                        </td>
+                        <td className="py-1">
+                          <input type="number" step="any" value={point.uncertainty}
+                            onChange={e => updatePoint(gi, pi, 'uncertainty', e.target.value)}
+                            className="w-20 bg-dark-700 border-dark-500 rounded px-1 py-0.5" />
+                        </td>
+                        <td className="py-1">
+                          <input type="checkbox" checked={point.ok === true || point.ok === 'true'}
+                            onChange={e => updatePoint(gi, pi, 'ok', e.target.checked)}
+                            className="form-checkbox h-4 w-4 text-accent-blue bg-dark-700 border-dark-500 rounded" />
+                        </td>
+                        <td className="py-1">
+                          {group.points.length > 1 && (
+                            <button type="button" onClick={() => removePoint(gi, pi)}
+                              className="text-accent-red text-xs hover:underline">X</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button type="button" onClick={() => addPoint(gi)}
+                  className="text-xs text-accent-blue hover:underline">+ Adicionar Ponto</button>
+              </div>
+            ))}
+          </div>
+
           {error && <p className="text-accent-red text-xs">{error}</p>}
+
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-3 py-1.5 border border-dark-500 rounded text-dark-300 text-xs">Cancelar</button>
-            <button type="submit" disabled={loading} className="px-3 py-1.5 bg-accent-blue-dark text-blue-100 rounded text-xs hover:bg-accent-blue">
+            <button type="button" onClick={onClose}
+              className="px-3 py-1.5 border border-dark-500 rounded text-dark-300 text-xs">Cancelar</button>
+            <button type="submit" disabled={loading}
+              className="px-3 py-1.5 bg-accent-blue-dark text-blue-100 rounded text-xs hover:bg-accent-blue">
               {loading ? 'Salvando...' : 'Salvar'}
             </button>
           </div>

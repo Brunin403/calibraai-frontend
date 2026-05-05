@@ -246,17 +246,11 @@ export default function CalibrationsPage() {
                           {new Date(cal.date).toLocaleDateString('pt-BR')}
                         </span>
                         <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                          cal.result === 'aprovado'
-                            ? 'bg-green-900 text-green-300'
-                            : cal.result === 'aprovado_com_restricao'
-                            ? 'bg-yellow-900 text-yellow-300'
-                            : 'bg-red-900 text-red-300'
+                          cal.result === 'aprovado' ? 'bg-green-900 text-green-300' :
+                          cal.result === 'aprovado_com_restricao' ? 'bg-yellow-900 text-yellow-300' :
+                          'bg-red-900 text-red-300'
                         }`}>
-                          {cal.result === 'aprovado'
-                            ? 'Aprovado'
-                            : cal.result === 'aprovado_com_restricao'
-                            ? 'Aprov. c/ restrição'
-                            : 'Reprovado'}
+                          {cal.result === 'aprovado' ? 'Aprovado' : cal.result === 'aprovado_com_restricao' ? 'Aprov. c/ restrição' : 'Reprovado'}
                         </span>
                       </div>
                       <div className="text-dark-400 mt-1">
@@ -265,6 +259,37 @@ export default function CalibrationsPage() {
                       {cal.nextDate && (
                         <div className="text-dark-400">
                           Próxima: {new Date(cal.nextDate).toLocaleDateString('pt-BR')}
+                        </div>
+                      )}
+                      {cal.measurementGroups?.length > 0 && (
+                        <div className="mt-2 border-t border-dark-600 pt-2">
+                          {cal.measurementGroups.map((group, gi) => (
+                            <div key={gi} className="mb-2">
+                              <p className="text-dark-400 font-semibold">{group.quantity} ({group.unit})</p>
+                              <table className="w-full text-xs mt-1">
+                                <thead>
+                                  <tr className="text-dark-400">
+                                    <th className="text-left">Aplicado</th>
+                                    <th className="text-left">Lido</th>
+                                    <th className="text-left">Erro</th>
+                                    <th className="text-left">Incert.</th>
+                                    <th className="text-left">OK</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {group.points.map((p, pi) => (
+                                    <tr key={pi}>
+                                      <td>{p.applied}</td>
+                                      <td>{p.read}</td>
+                                      <td>{p.error}</td>
+                                      <td>{p.uncertainty}</td>
+                                      <td>{p.ok ? '✅' : '❌'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
