@@ -50,10 +50,16 @@ export default function CalibrationsPage() {
   const handleCalibrationCreated = () => {
     if (selectedInstrument) loadCalibrations(selectedInstrument._id);
     setShowForm(false);
-    loadCalibratableInstruments(); // atualiza status na lista
+    loadCalibratableInstruments();
   };
 
   const handleChangeStatus = async (instrumentId, newStatus) => {
+    const confirmMsg = {
+      'em_calibracao': 'Enviar instrumento para calibração externa?',
+      'aguardando_laudo': 'Marcar como aguardando laudo?',
+    };
+    if (!window.confirm(confirmMsg[newStatus] || 'Alterar status?')) return;
+
     try {
       await api.patch(`/instruments/${instrumentId}/calibration-status`, { calibrationStatus: newStatus });
       loadCalibratableInstruments();
@@ -61,11 +67,10 @@ export default function CalibrationsPage() {
         loadCalibrations(instrumentId);
       }
     } catch (err) {
-      alert('Erro ao alterar status');
+      alert('Erro ao alterar status: ' + (err.response?.data?.error || err.message));
     }
   };
 
-  // Aplicar filtros localmente
   const filteredInstruments = instruments.filter(inst => {
     if (filterTag && !inst.tag.toLowerCase().includes(filterTag.toLowerCase())) return false;
     if (filterDescription && !inst.description.toLowerCase().includes(filterDescription.toLowerCase())) return false;
@@ -82,7 +87,6 @@ export default function CalibrationsPage() {
       <div className="w-1/3 bg-dark-800 border border-dark-600 rounded-lg p-3 flex flex-col">
         <h3 className="text-sm font-semibold text-white mb-2">Instrumentos calibráveis</h3>
 
-        {/* Filtros compactos */}
         <div className="space-y-2 mb-3">
           <input
             type="text"
@@ -136,7 +140,7 @@ export default function CalibrationsPage() {
         </div>
       </div>
 
-      {/* Detalhes e calibrações */}
+      {/* Detalhes e histórico de calibrações */}
       <div className="flex-1 bg-dark-800 border border-dark-600 rounded-lg p-3 overflow-y-auto">
         {!selectedInstrument ? (
           <div className="flex items-center justify-center h-full text-dark-400 text-sm">
@@ -149,17 +153,31 @@ export default function CalibrationsPage() {
                 <h3 className="text-base font-bold text-white font-mono">{selectedInstrument.tag}</h3>
                 <p className="text-xs text-dark-400">{selectedInstrument.description}</p>
                 <p className="text-xs text-dark-400">Setor: {selectedInstrument.sector || '-'} | Tipo: {selectedInstrument.type}</p>
-                <div className="mt-1 flex gap-2 items-center">
-                  <span className="text-xs text-dark-400">Status: <StatusBadge status={selectedInstrument.calibrationStatus || selectedInstrument.status} /></span>
+                <div className="mt-1 flex gap-2 items-center flex-wrap">
+                  <span className="text-xs text-dark-400">Status:</span>
+                  <StatusBadge status={selectedInstrument.calibrationStatus || selectedInstrument.status} />
                   {user?.role === 'admin' && (
                     <div className="flex gap-1">
-                      <button onClick={() => handleChangeStatus(selectedInstrument._id, 'em_calibracao')} className="text-[10px] bg-purple-800 text-purple-200 px-1.5 py-0.5 rounded">Enviar p/ calib.</button>
-                      <button onClick={() => handleChangeStatus(selectedInstrument._id, 'aguardando_laudo')} className="text-[10px] bg-yellow-800 text-yellow-200 px-1.5 py-0.5 rounded">Aguardando laudo</button>
+                      <button
+                        onClick={() => handleChangeStatus(selectedInstrument._id, 'em_calibracao')}
+                        className="text-[10px] bg-purple-800 hover:bg-purple-700 text-purple-200 px-1.5 py-0.5 rounded"
+                      >
+                        Enviar p/ calib.
+                      </button>
+                      <button
+                        onClick={() => handleChangeStatus(selectedInstrument._id, 'aguardando_laudo')}
+                        className="text-[10px] bg-yellow-800 hover:bg-yellow-700 text-yellow-200 px-1.5 py-0.5 rounded"
+                      >
+                        Aguardando laudo
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
-              <button onClick={() => setShowForm(true)} className="px-3 py-1.5 bg-accent-blue-dark text-blue-100 rounded text-xs">
+              <button
+                onClick={() => setShowForm(true)}
+                className="px-3 py-1.5 bg-accent-blue-dark text-blue-100 rounded text-xs hover:bg-accent-blue"
+              >
                 + Nova Calibração
               </button>
             </div>
@@ -174,17 +192,31 @@ export default function CalibrationsPage() {
                   {calibrations.map(cal => (
                     <div key={cal._id} className="bg-dark-700 border border-dark-500 rounded p-2 text-xs">
                       <div className="flex justify-between">
-                        <span className="font-medium text-white">{new Date(cal.date).toLocaleDateString('pt-BR')}</span>
+                        <span className="font-medium text-white">
+                          {new Date(cal.date).toLocaleDateString('pt-BR')}
+                        </span>
                         <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                          cal.result === 'aprovado' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+                          cal.result === 'aprovado'
+                            ? 'bg-green-900 text-green-300'
+                            : cal.result === 'aprovado_com_restricao'
+                            ? 'bg-yellow-900 text-yellow-300'
+                            : 'bg-red-900 text-red-300'
                         }`}>
-                          {cal.result === 'aprovado' ? 'Aprovado' : 'Reprovado'}
+                          {cal.result === 'aprovado'
+                            ? 'Aprovado'
+                            : cal.result === 'aprovado_com_restricao'
+                            ? 'Aprov. c/ restrição'
+                            : 'Reprovado'}
                         </span>
                       </div>
                       <div className="text-dark-400 mt-1">
                         Fornecedor: {cal.supplier || 'Interno'} | Certificado: {cal.certificateNumber || '-'}
                       </div>
-                      {cal.nextDate && <div className="text-dark-400">Próxima: {new Date(cal.nextDate).toLocaleDateString('pt-BR')}</div>}
+                      {cal.nextDate && (
+                        <div className="text-dark-400">
+                          Próxima: {new Date(cal.nextDate).toLocaleDateString('pt-BR')}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -194,6 +226,7 @@ export default function CalibrationsPage() {
         )}
       </div>
 
+      {/* Modal de nova calibração */}
       {showForm && selectedInstrument && (
         <CalibrationForm
           instrument={selectedInstrument}
