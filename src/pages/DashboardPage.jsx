@@ -70,6 +70,7 @@ export default function DashboardPage() {
         <div className="bg-dark-800 border border-dark-600 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-white mb-4">Alertas Críticos</h3>
           <div className="space-y-3">
+            
             {data.alerts.length === 0 ? (
               <p className="text-dark-400 text-sm">Nenhum alerta no momento.</p>
             ) : (
