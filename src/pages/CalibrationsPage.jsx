@@ -11,12 +11,16 @@ export default function CalibrationsPage() {
   const [calibrations, setCalibrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Filtros
   const [filterTag, setFilterTag] = useState('');
   const [filterDescription, setFilterDescription] = useState('');
   const [filterSector, setFilterSector] = useState('');
   const [filterType, setFilterType] = useState('');
+
+  // Ordenação
+  const [sortBy, setSortBy] = useState('tag'); // 'tag' ou 'nextDate'
 
   const loadCalibratableInstruments = async () => {
     try {
@@ -71,55 +75,94 @@ export default function CalibrationsPage() {
     }
   };
 
-  const filteredInstruments = instruments.filter(inst => {
-    if (filterTag && !inst.tag.toLowerCase().includes(filterTag.toLowerCase())) return false;
-    if (filterDescription && !inst.description.toLowerCase().includes(filterDescription.toLowerCase())) return false;
-    if (filterSector && !(inst.sector || '').toLowerCase().includes(filterSector.toLowerCase())) return false;
-    if (filterType && inst.type !== filterType) return false;
-    return true;
-  });
+  // Aplicar filtros e ordenação
+  const filteredInstruments = instruments
+    .filter(inst => {
+      if (filterTag && !inst.tag.toLowerCase().includes(filterTag.toLowerCase())) return false;
+      if (filterDescription && !inst.description.toLowerCase().includes(filterDescription.toLowerCase())) return false;
+      if (filterSector && !(inst.sector || '').toLowerCase().includes(filterSector.toLowerCase())) return false;
+      if (filterType && inst.type !== filterType) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'tag') {
+        return (a.tag || '').localeCompare(b.tag || '');
+      } else { // sortBy === 'nextDate'
+        if (!a.nextCalibrationDate && !b.nextCalibrationDate) return 0;
+        if (!a.nextCalibrationDate) return 1;
+        if (!b.nextCalibrationDate) return -1;
+        return new Date(a.nextCalibrationDate) - new Date(b.nextCalibrationDate);
+      }
+    });
 
   if (loading) return <div className="p-4 text-dark-400">Carregando...</div>;
 
   return (
     <div className="p-4 flex gap-4 h-full">
-      {/* Lista de instrumentos calibráveis */}
+      {/* Painel esquerdo */}
       <div className="w-1/3 bg-dark-800 border border-dark-600 rounded-lg p-3 flex flex-col">
-        <h3 className="text-sm font-semibold text-white mb-2">Instrumentos calibráveis</h3>
-
-        <div className="space-y-2 mb-3">
-          <input
-            type="text"
-            placeholder="Filtrar TAG..."
-            value={filterTag}
-            onChange={(e) => setFilterTag(e.target.value)}
-            className="w-full bg-dark-700 border border-dark-500 rounded px-2 py-1 text-xs text-white placeholder-dark-400"
-          />
-          <input
-            type="text"
-            placeholder="Filtrar descrição..."
-            value={filterDescription}
-            onChange={(e) => setFilterDescription(e.target.value)}
-            className="w-full bg-dark-700 border border-dark-500 rounded px-2 py-1 text-xs text-white placeholder-dark-400"
-          />
-          <input
-            type="text"
-            placeholder="Filtrar setor..."
-            value={filterSector}
-            onChange={(e) => setFilterSector(e.target.value)}
-            className="w-full bg-dark-700 border border-dark-500 rounded px-2 py-1 text-xs text-white placeholder-dark-400"
-          />
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="w-full bg-dark-700 border border-dark-500 rounded px-2 py-1 text-xs text-white"
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-sm font-semibold text-white">Calibráveis</h3>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="text-xs text-accent-blue hover:underline"
           >
-            <option value="">Todos os tipos</option>
-            <option value="equipamento">Equipamento</option>
-            <option value="instrumento">Instrumento</option>
-            <option value="utensilio">Utensílio</option>
-          </select>
+            {showFilters ? '🔽 Ocultar' : '🔍 Filtros'}
+          </button>
         </div>
+
+        {/* Ordenação */}
+        <div className="flex gap-2 mb-2">
+          <button
+            onClick={() => setSortBy('tag')}
+            className={`text-[10px] px-2 py-1 rounded ${sortBy === 'tag' ? 'bg-accent-blue-dark text-blue-100' : 'bg-dark-700 text-dark-400'}`}
+          >
+            A-Z
+          </button>
+          <button
+            onClick={() => setSortBy('nextDate')}
+            className={`text-[10px] px-2 py-1 rounded ${sortBy === 'nextDate' ? 'bg-accent-blue-dark text-blue-100' : 'bg-dark-700 text-dark-400'}`}
+          >
+            Vencimento
+          </button>
+        </div>
+
+        {/* Filtros ocultos */}
+        {showFilters && (
+          <div className="space-y-2 mb-3">
+            <input
+              type="text"
+              placeholder="Filtrar TAG..."
+              value={filterTag}
+              onChange={(e) => setFilterTag(e.target.value)}
+              className="w-full bg-dark-700 border border-dark-500 rounded px-2 py-1 text-xs text-white placeholder-dark-400"
+            />
+            <input
+              type="text"
+              placeholder="Filtrar descrição..."
+              value={filterDescription}
+              onChange={(e) => setFilterDescription(e.target.value)}
+              className="w-full bg-dark-700 border border-dark-500 rounded px-2 py-1 text-xs text-white placeholder-dark-400"
+            />
+            <input
+              type="text"
+              placeholder="Filtrar setor..."
+              value={filterSector}
+              onChange={(e) => setFilterSector(e.target.value)}
+              className="w-full bg-dark-700 border border-dark-500 rounded px-2 py-1 text-xs text-white placeholder-dark-400"
+            />
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="w-full bg-dark-700 border border-dark-500 rounded px-2 py-1 text-xs text-white"
+            >
+              <option value="">Todos os tipos</option>
+              <option value="equipamento">Equipamento</option>
+              <option value="instrumento">Instrumento</option>
+              <option value="utensilio">Utensílio</option>
+            </select>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto space-y-1">
           {filteredInstruments.map(inst => (
@@ -130,7 +173,14 @@ export default function CalibrationsPage() {
                 selectedInstrument?._id === inst._id ? 'bg-accent-blue-dark text-blue-100' : 'hover:bg-dark-700 text-dark-300'
               }`}
             >
-              <span className="font-mono font-medium">{inst.tag}</span>
+              <div>
+                <span className="font-mono font-medium">{inst.tag}</span>
+                {inst.nextCalibrationDate && (
+                  <div className="text-[10px] text-dark-400">
+                    {new Date(inst.nextCalibrationDate).toLocaleDateString('pt-BR')}
+                  </div>
+                )}
+              </div>
               <StatusBadge status={inst.calibrationStatus || inst.status} />
             </div>
           ))}
@@ -140,7 +190,7 @@ export default function CalibrationsPage() {
         </div>
       </div>
 
-      {/* Detalhes e histórico de calibrações */}
+      {/* Detalhes e histórico */}
       <div className="flex-1 bg-dark-800 border border-dark-600 rounded-lg p-3 overflow-y-auto">
         {!selectedInstrument ? (
           <div className="flex items-center justify-center h-full text-dark-400 text-sm">
@@ -182,7 +232,7 @@ export default function CalibrationsPage() {
               </button>
             </div>
 
-            {/* Histórico de calibrações */}
+            {/* Histórico */}
             <div className="mt-3">
               <h4 className="text-xs font-semibold text-dark-400 uppercase mb-2">Histórico de calibrações</h4>
               {calibrations.length === 0 ? (
@@ -226,7 +276,6 @@ export default function CalibrationsPage() {
         )}
       </div>
 
-      {/* Modal de nova calibração */}
       {showForm && selectedInstrument && (
         <CalibrationForm
           instrument={selectedInstrument}
