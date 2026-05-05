@@ -158,7 +158,7 @@ export default function AssetsPage() {
             ) : (
               getFilteredInstruments().map(instrument => (
                 <tr key={instrument._id} className="border-t border-dark-600 hover:bg-dark-700">
-                  <td className="px-3 py-1.5 font-mono text-accent-blue font-medium">{instrument.tag}</td>
+                  <td className="px-3 py-1.5 font-mono text-white font-bold cursor-pointer hover:underline">{instrument.tag}</td>
                   <td className="px-3 py-1.5 text-dark-300">{instrument.description}</td>
                   <td className="px-3 py-1.5 text-dark-400">{instrument.sector || '-'}</td>
                   <td className="px-3 py-1.5 text-dark-400 capitalize">{instrument.type}</td>
