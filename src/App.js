@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import InstrumentsPage from './pages/InstrumentsPage';
 import InstrumentDetailPage from './pages/InstrumentDetailPage';
 import ReportsPage from './pages/ReportsPage';
+import CalibrationsPage from './pages/CalibrationsPage';
 
 // Componente que protege as rotas internas
 function PrivateRoute({ children }) {
@@ -31,9 +32,10 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/instruments" element={<InstrumentsPage />} />
-            <Route path="/calibrations" element={<div className="p-4 text-xl">Calibrações (em breve)</div>} />
+            <Route path="/calibrations" element={<CalibrationsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/instruments/:id" element={<InstrumentDetailPage />} />
+            
             {/* Captura qualquer outra rota não mapeada dentro da área protegida */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

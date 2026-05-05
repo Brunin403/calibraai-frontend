@@ -1,15 +1,15 @@
-import { Outlet } from 'react-router-dom';  // ← precisa importar Outlet
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 export default function Layout() {
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar />
-      <div className="ml-60 flex-1 flex flex-col overflow-y-auto">
-        <Header />
-        <main className="p-8 flex-1">
-          <Outlet />   {/* ← ESSENCIAL: é aqui que o conteúdo das rotas filhas aparece */}
+    <div className="flex flex-col h-screen bg-dark-900">
+      <Header />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
         </main>
       </div>
     </div>

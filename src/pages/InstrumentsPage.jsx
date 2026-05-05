@@ -33,7 +33,7 @@ export default function InstrumentsPage() {
       const res = await api.get('/instruments');
       setInstruments(res.data);
     } catch (err) {
-      console.error('Erro ao carregar instrumentos:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ export default function InstrumentsPage() {
       await api.delete(`/instruments/${id}`, { data: { reason } });
       setInstruments(prev => prev.filter(i => i._id !== id));
     } catch (err) {
-      alert('Erro ao excluir: ' + (err.response?.data?.error || err.message));
+      alert('Erro ao excluir');
     }
   };
 
@@ -65,7 +65,7 @@ export default function InstrumentsPage() {
     let filtered = [...instruments];
     if (filterTag) filtered = filtered.filter(i => i.tag.toLowerCase().includes(filterTag.toLowerCase()));
     if (filterDescription) filtered = filtered.filter(i => i.description.toLowerCase().includes(filterDescription.toLowerCase()));
-    if (filterSector) filtered = filtered.filter(i => (i.sector || i.location || '').toLowerCase().includes(filterSector.toLowerCase()));
+    if (filterSector) filtered = filtered.filter(i => (i.sector || '').toLowerCase().includes(filterSector.toLowerCase()));
     if (filterStatus) filtered = filtered.filter(i => i.operationalStatus === filterStatus);
     if (filterType) filtered = filtered.filter(i => i.type === filterType);
 
@@ -78,26 +78,26 @@ export default function InstrumentsPage() {
   };
 
   const clearFilters = () => {
-    setFilterTag('');
-    setFilterDescription('');
-    setFilterSector('');
-    setFilterStatus('');
-    setFilterType('');
+    setFilterTag(''); setFilterDescription(''); setFilterSector('');
+    setFilterStatus(''); setFilterType('');
   };
 
-  if (loading) return <div className="p-4 text-gray-500">Carregando...</div>;
+  if (loading) return <div className="p-4 text-dark-400">Carregando...</div>;
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-bold">Instrumentos</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-white">Instrumentos</h2>
+          <p className="text-xs text-dark-400">{instruments.length} instrumentos cadastrados</p>
+        </div>
         <div className="flex gap-2">
           {user?.role === 'admin' && (
             <>
-              <button onClick={() => setShowNewInstrument(true)} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+              <button onClick={() => setShowNewInstrument(true)} className="px-3 py-1.5 bg-accent-blue-dark text-blue-100 rounded text-xs hover:bg-accent-blue">
                 ➕ Novo
               </button>
-              <button onClick={() => setShowImport(true)} className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+              <button onClick={() => setShowImport(true)} className="px-3 py-1.5 bg-emerald-700 text-emerald-100 rounded text-xs hover:bg-emerald-600">
                 📥 Importar
               </button>
             </>
@@ -105,83 +105,79 @@ export default function InstrumentsPage() {
         </div>
       </div>
 
-      {/* Filtros compactos */}
-      <button onClick={() => setShowFilters(!showFilters)} className="mb-2 text-sm text-blue-600 hover:underline">
+      <button onClick={() => setShowFilters(!showFilters)} className="text-xs text-accent-blue hover:underline mb-2">
         {showFilters ? '🔽 Ocultar filtros' : '🔍 Filtros'}
       </button>
       {showFilters && (
-        <div className="bg-white border rounded-lg p-2 mb-2 grid grid-cols-2 md:grid-cols-5 gap-2">
-          <input placeholder="TAG..." value={filterTag} onChange={e => setFilterTag(e.target.value)} className="px-2 py-1 border rounded text-sm" />
-          <input placeholder="Descrição..." value={filterDescription} onChange={e => setFilterDescription(e.target.value)} className="px-2 py-1 border rounded text-sm" />
-          <input placeholder="Setor..." value={filterSector} onChange={e => setFilterSector(e.target.value)} className="px-2 py-1 border rounded text-sm" />
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="px-2 py-1 border rounded text-sm">
+        <div className="bg-dark-800 border border-dark-600 rounded-lg p-2 mb-2 grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+          <input placeholder="TAG..." value={filterTag} onChange={e => setFilterTag(e.target.value)} className="bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
+          <input placeholder="Descrição..." value={filterDescription} onChange={e => setFilterDescription(e.target.value)} className="bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
+          <input placeholder="Setor..." value={filterSector} onChange={e => setFilterSector(e.target.value)} className="bg-dark-700 border-dark-500 rounded px-2 py-1 text-white" />
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-dark-700 border-dark-500 rounded px-2 py-1 text-white">
             <option value="">Todos os status</option>
             <option value="ativo">Ativo</option>
             <option value="desativado">Desativado</option>
             <option value="backup">Backup</option>
             <option value="manutencao">Manutenção</option>
           </select>
-          <select value={filterType} onChange={e => setFilterType(e.target.value)} className="px-2 py-1 border rounded text-sm">
+          <select value={filterType} onChange={e => setFilterType(e.target.value)} className="bg-dark-700 border-dark-500 rounded px-2 py-1 text-white">
             <option value="">Todos os tipos</option>
             <option value="equipamento">Equipamento</option>
             <option value="instrumento">Instrumento</option>
             <option value="utensilio">Utensílio</option>
           </select>
-          <button onClick={clearFilters} className="text-xs text-red-600 hover:underline">Limpar</button>
+          <button onClick={clearFilters} className="text-accent-red hover:underline">Limpar</button>
         </div>
       )}
 
-      {/* Tabela compacta */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-dark-800 border border-dark-600 rounded-lg overflow-hidden">
+        <table className="w-full text-xs">
           <thead>
-            <tr className="bg-gray-50 text-left text-gray-600">
-              <th className="cursor-pointer px-3 py-1.5 font-medium" onClick={() => { setSortField('tag'); setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); }}>
+            <tr className="bg-dark-700 text-dark-400 uppercase tracking-wider">
+              <th className="cursor-pointer px-3 py-2 text-left" onClick={() => { setSortField('tag'); setSortOrder(v => v === 'asc' ? 'desc' : 'asc'); }}>
                 TAG {sortField === 'tag' && (sortOrder === 'asc' ? '▲' : '▼')}
               </th>
-              <th className="cursor-pointer px-3 py-1.5 font-medium" onClick={() => { setSortField('description'); setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); }}>
-                Descrição {sortField === 'description' && (sortOrder === 'asc' ? '▲' : '▼')}
+              <th className="cursor-pointer px-3 py-2 text-left" onClick={() => { setSortField('description'); setSortOrder(v => v === 'asc' ? 'desc' : 'asc'); }}>
+                Descrição
               </th>
-              <th className="cursor-pointer px-3 py-1.5 font-medium" onClick={() => { setSortField('sector'); setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); }}>
-                Setor {sortField === 'sector' && (sortOrder === 'asc' ? '▲' : '▼')}
+              <th className="cursor-pointer px-3 py-2 text-left" onClick={() => { setSortField('sector'); setSortOrder(v => v === 'asc' ? 'desc' : 'asc'); }}>
+                Setor
               </th>
-              <th className="cursor-pointer px-3 py-1.5 font-medium" onClick={() => { setSortField('type'); setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); }}>
-                Tipo {sortField === 'type' && (sortOrder === 'asc' ? '▲' : '▼')}
+              <th className="cursor-pointer px-3 py-2 text-left" onClick={() => { setSortField('type'); setSortOrder(v => v === 'asc' ? 'desc' : 'asc'); }}>
+                Tipo
               </th>
-              <th className="cursor-pointer px-3 py-1.5 font-medium" onClick={() => { setSortField('operationalStatus'); setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); }}>
-                Status {sortField === 'operationalStatus' && (sortOrder === 'asc' ? '▲' : '▼')}
+              <th className="cursor-pointer px-3 py-2 text-left" onClick={() => { setSortField('operationalStatus'); setSortOrder(v => v === 'asc' ? 'desc' : 'asc'); }}>
+                Status
               </th>
-              {showActions && <th className="px-3 py-1.5 font-medium">Ações</th>}
+              {showActions && <th className="px-3 py-2 text-left">Ações</th>}
             </tr>
           </thead>
           <tbody>
             {getFilteredInstruments().length === 0 ? (
-              <tr>
-                <td colSpan={colSpan} className="text-center py-6 text-gray-400">Nenhum instrumento encontrado</td>
-              </tr>
+              <tr><td colSpan={colSpan} className="text-center py-8 text-dark-400">Nenhum instrumento encontrado</td></tr>
             ) : (
               getFilteredInstruments().map(instrument => (
-                <tr key={instrument._id} className="border-t hover:bg-gray-50">
-                  <td className="px-3 py-1 text-xs whitespace-nowrap">{instrument.tag}</td>
-                  <td className="px-3 py-1 text-xs">{instrument.description}</td>
-                  <td className="px-3 py-1 text-xs">{instrument.sector || instrument.location || '-'}</td>
-                  <td className="px-3 py-1 text-xs capitalize">{instrument.type}</td>
-                  <td className="px-3 py-1">
-                    <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                      instrument.operationalStatus === 'ativo' ? 'bg-green-100 text-green-700' :
-                      instrument.operationalStatus === 'desativado' ? 'bg-gray-200 text-gray-600' :
-                      instrument.operationalStatus === 'backup' ? 'bg-blue-100 text-blue-700' :
-                      'bg-yellow-100 text-yellow-700'
+                <tr key={instrument._id} className="border-t border-dark-600 hover:bg-dark-700">
+                  <td className="px-3 py-1.5 font-mono text-accent-blue font-medium">{instrument.tag}</td>
+                  <td className="px-3 py-1.5 text-dark-300">{instrument.description}</td>
+                  <td className="px-3 py-1.5 text-dark-400">{instrument.sector || '-'}</td>
+                  <td className="px-3 py-1.5 text-dark-400 capitalize">{instrument.type}</td>
+                  <td className="px-3 py-1.5">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      instrument.operationalStatus === 'ativo' ? 'bg-green-900 text-green-300' :
+                      instrument.operationalStatus === 'desativado' ? 'bg-gray-700 text-gray-400' :
+                      instrument.operationalStatus === 'backup' ? 'bg-blue-900 text-blue-300' :
+                      'bg-yellow-900 text-yellow-300'
                     }`}>
                       {instrument.operationalStatus === 'manutencao' ? 'Manutenção' : (instrument.operationalStatus || 'ativo').charAt(0).toUpperCase() + (instrument.operationalStatus || 'ativo').slice(1)}
                     </span>
                   </td>
                   {showActions && (
-                    <td className="px-3 py-1">
-                      <div className="flex gap-1">
-                        <button onClick={() => setEditingInstrument(instrument)} className="text-blue-600 hover:text-blue-800 text-xs">✏️</button>
+                    <td className="px-3 py-1.5">
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingInstrument(instrument)} className="text-accent-blue hover:text-blue-300">✏️</button>
                         {user?.role === 'admin' && (
-                          <button onClick={() => handleDelete(instrument._id, instrument.tag)} className="text-red-500 hover:text-red-700 text-xs">🗑️</button>
+                          <button onClick={() => handleDelete(instrument._id, instrument.tag)} className="text-accent-red hover:text-red-400">🗑️</button>
                         )}
                       </div>
                     </td>
@@ -194,7 +190,7 @@ export default function InstrumentsPage() {
       </div>
 
       {showNewInstrument && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="max-w-2xl w-full mx-4">
             <InstrumentForm onInstrumentCreated={handleInstrumentCreated} onClose={() => setShowNewInstrument(false)} />
           </div>

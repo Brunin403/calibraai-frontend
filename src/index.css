@@ -2,36 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f7fa;
+  font-family: 'DM Sans', sans-serif;
+  background-color: #0e1017;
+  color: #e2e8f0;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+/* Scrollbar escuro */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #252d3d;
+  border-radius: 3px;
 }
 
-/* Animação da barra de progresso indeterminada */
+/* Animação da barra de progresso */
 @keyframes progress-indeterminate {
-  0% {
-    width: 0%;
-    margin-left: 0;
-  }
-  50% {
-    width: 70%;
-    margin-left: 30%;
-  }
-  100% {
-    width: 0%;
-    margin-left: 100%;
-  }
+  0% { width: 0%; margin-left: 0; }
+  50% { width: 70%; margin-left: 30%; }
+  100% { width: 0%; margin-left: 100%; }
 }
-
 .animate-progress-indeterminate {
   animation: progress-indeterminate 1.5s infinite linear;
 }
