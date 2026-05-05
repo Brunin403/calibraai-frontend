@@ -7,6 +7,7 @@ import InstrumentsPage from './pages/InstrumentsPage';
 import InstrumentDetailPage from './pages/InstrumentDetailPage';
 import ReportsPage from './pages/ReportsPage';
 import CalibrationsPage from './pages/CalibrationsPage';
+import AssetsPage from './pages/AssetsPage';
 
 // Componente que protege as rotas internas
 function PrivateRoute({ children }) {
@@ -31,6 +32,7 @@ export default function App() {
             {/* Redireciona a raiz para o dashboard */}
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/assets" element={<AssetsPage />} />
             <Route path="/instruments" element={<InstrumentsPage />} />
             <Route path="/calibrations" element={<CalibrationsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
