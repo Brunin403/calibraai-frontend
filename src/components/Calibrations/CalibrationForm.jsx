@@ -13,7 +13,6 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
   const [error, setError] = useState('');
   const [file, setFile] = useState(null);
 
-
   const [groups, setGroups] = useState([
     {
       quantity: '',
@@ -21,28 +20,6 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
       points: [{ applied: '', read: '', error: '', uncertainty: '', ok: true }]
     }
   ]);
-
-    const handleFileChange = (e) => {
-  setFile(e.target.files[0]);
-};
-
-const uploadCertificate = async (calibrationId) => {
-  if (!file) return;
-  //setUploading(true);
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await api.post(`/calibrations/${calibrationId}/upload`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    //setCertificatePath(res.data.path);
-    setFile(null);
-  } catch (err) {
-    setError('Erro ao enviar certificado');
-  } finally {
-    setUploading(false);
-  }
-};
 
   const addGroup = () => {
     setGroups([...groups, {
@@ -92,6 +69,24 @@ const uploadCertificate = async (calibrationId) => {
     setGroups(updated);
   };
 
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const uploadCertificate = async (calibrationId) => {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api.post(`/calibrations/${calibrationId}/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFile(null);
+    } catch (err) {
+      setError('Erro ao enviar certificado');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -121,9 +116,7 @@ const uploadCertificate = async (calibrationId) => {
         }))
       };
       const res = await api.post('/calibrations', payload);
-    if (file) await uploadCertificate(res.data._id);
-    onCreated();
-      await api.post('/calibrations', payload);
+      if (file) await uploadCertificate(res.data._id);
       onCreated();
     } catch (err) {
       setError(err.response?.data?.error || 'Erro ao salvar calibração');
@@ -286,6 +279,13 @@ const uploadCertificate = async (calibrationId) => {
             ))}
           </div>
 
+          {/* Upload de Certificado */}
+          <div>
+            <label className="block text-dark-400 mb-1">Certificado (PDF)</label>
+            <input type="file" accept=".pdf" onChange={handleFileChange}
+              className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-xs" />
+          </div>
+
           {error && <p className="text-accent-red text-xs">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-2">
@@ -296,14 +296,8 @@ const uploadCertificate = async (calibrationId) => {
               {loading ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
-          <div>
-  <label className="block text-dark-400 mb-1">Certificado (PDF)</label>
-  <input type="file" accept=".pdf" onChange={handleFileChange}
-    className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-xs" />
-</div>
         </form>
       </div>
     </div>
-    
   );
 }
