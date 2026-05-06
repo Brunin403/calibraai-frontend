@@ -12,8 +12,7 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [certificatePath, setCertificatePath] = useState('');
+
 
   const [groups, setGroups] = useState([
     {
@@ -29,14 +28,14 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
 
 const uploadCertificate = async (calibrationId) => {
   if (!file) return;
-  setUploading(true);
+  //setUploading(true);
   try {
     const formData = new FormData();
     formData.append('file', file);
     const res = await api.post(`/calibrations/${calibrationId}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-    setCertificatePath(res.data.path);
+    //setCertificatePath(res.data.path);
     setFile(null);
   } catch (err) {
     setError('Erro ao enviar certificado');
