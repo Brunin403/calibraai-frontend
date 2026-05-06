@@ -7,10 +7,11 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
   const [supplier, setSupplier] = useState('');
   const [certificateNumber, setCertificateNumber] = useState('');
   const [notes, setNotes] = useState('');
+  const [acceptanceType, setAcceptanceType] = useState('text');
+  const [acceptanceValue, setAcceptanceValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Estado para grupos de medição
   const [groups, setGroups] = useState([
     {
       quantity: '',
@@ -28,9 +29,7 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
   };
 
   const removeGroup = (index) => {
-    if (groups.length > 1) {
-      setGroups(groups.filter((_, i) => i !== index));
-    }
+    if (groups.length > 1) setGroups(groups.filter((_, i) => i !== index));
   };
 
   const updateGroup = (index, field, value) => {
@@ -55,7 +54,18 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
 
   const updatePoint = (groupIndex, pointIndex, field, value) => {
     const updated = [...groups];
-    updated[groupIndex].points[pointIndex][field] = value;
+    const point = updated[groupIndex].points[pointIndex];
+    point[field] = value;
+
+    // Calcular erro automaticamente se aplicado e lido estiverem preenchidos
+    if (field === 'applied' || field === 'read') {
+      const applied = parseFloat(point.applied);
+      const read = parseFloat(point.read);
+      if (!isNaN(applied) && !isNaN(read)) {
+        point.error = (read - applied).toFixed(4);
+      }
+    }
+
     setGroups(updated);
   };
 
@@ -64,7 +74,6 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
     setLoading(true);
     setError('');
     try {
-      // Converte valores para Number antes de enviar
       const payload = {
         instrumentId: instrument._id,
         date,
@@ -72,6 +81,10 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
         supplier,
         certificateNumber,
         notes,
+        acceptanceCriteria: {
+          type: acceptanceType,
+          value: acceptanceValue,
+        },
         measurementGroups: groups.map(group => ({
           quantity: group.quantity,
           unit: group.unit,
@@ -99,7 +112,6 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
         <h2 className="text-lg font-bold mb-3">Nova Calibração – {instrument.tag}</h2>
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
 
-          {/* Dados básicos */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-dark-400 mb-1">Data *</label>
@@ -134,7 +146,30 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
               className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
           </div>
 
-          {/* Grupos de medição */}
+          {/* Critério de Aceitação (híbrido) */}
+          <div className="border-t border-dark-600 pt-3">
+            <h4 className="text-sm font-semibold mb-2">Critério de Aceitação</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-dark-400 mb-1">Tipo</label>
+                <select value={acceptanceType} onChange={e => setAcceptanceType(e.target.value)}
+                  className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1">
+                  <option value="text">Texto livre</option>
+                  <option value="maxError" disabled>Erro máximo (futuro)</option>
+                  <option value="percentage" disabled>Percentual (futuro)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-dark-400 mb-1">Valor / Descrição</label>
+                <input type="text" value={acceptanceValue}
+                  onChange={e => setAcceptanceValue(e.target.value)}
+                  placeholder="Ex: Erro ≤ 1,5%"
+                  className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
+              </div>
+            </div>
+          </div>
+
+          {/* Pontos de Calibração */}
           <div className="border-t border-dark-600 pt-3">
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-sm font-semibold">Pontos de Calibração</h4>
@@ -174,7 +209,7 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
                     <tr className="text-dark-400 uppercase">
                       <th className="text-left py-1">Aplicado</th>
                       <th className="text-left py-1">Lido</th>
-                      <th className="text-left py-1">Erro</th>
+                      <th className="text-left py-1">Erro (auto)</th>
                       <th className="text-left py-1">Incerteza</th>
                       <th className="text-left py-1">OK</th>
                       <th></th>
@@ -196,7 +231,7 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
                         <td className="py-1">
                           <input type="number" step="any" value={point.error}
                             onChange={e => updatePoint(gi, pi, 'error', e.target.value)}
-                            className="w-16 bg-dark-700 border-dark-500 rounded px-1 py-0.5" />
+                            className="w-20 bg-dark-700 border-dark-500 rounded px-1 py-0.5" />
                         </td>
                         <td className="py-1">
                           <input type="number" step="any" value={point.uncertainty}

@@ -14,14 +14,13 @@ export default function EditInstrumentModal({ instrument, onClose, onUpdated }) 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Novos campos
+  // Faixas (opcionais)
   const [usageMin, setUsageMin] = useState(instrument?.usageRange?.min || '');
   const [usageMax, setUsageMax] = useState(instrument?.usageRange?.max || '');
   const [usageUnit, setUsageUnit] = useState(instrument?.usageRange?.unit || '');
   const [nominalMin, setNominalMin] = useState(instrument?.nominalRange?.min || '');
   const [nominalMax, setNominalMax] = useState(instrument?.nominalRange?.max || '');
   const [nominalUnit, setNominalUnit] = useState(instrument?.nominalRange?.unit || '');
-  const [acceptanceCriteria, setAcceptanceCriteria] = useState(instrument?.acceptanceCriteria || '');
 
   useEffect(() => { loadSectors(); }, []);
 
@@ -41,7 +40,6 @@ export default function EditInstrumentModal({ instrument, onClose, onUpdated }) 
         description, sector, type, operationalStatus,
         usageRange: usageMin || usageMax ? { min: parseFloat(usageMin) || 0, max: parseFloat(usageMax) || 0, unit: usageUnit } : undefined,
         nominalRange: nominalMin || nominalMax ? { min: parseFloat(nominalMin) || 0, max: parseFloat(nominalMax) || 0, unit: nominalUnit } : undefined,
-        acceptanceCriteria: acceptanceCriteria || undefined,
       };
       if (user?.role === 'admin' && tag !== instrument.tag) {
         updates.tag = tag;
@@ -125,13 +123,6 @@ export default function EditInstrumentModal({ instrument, onClose, onUpdated }) 
               <input type="text" placeholder="Unidade" value={nominalUnit} onChange={e => setNominalUnit(e.target.value)}
                 className="bg-dark-700 border border-dark-500 rounded px-2 py-1 text-sm" />
             </div>
-          </div>
-
-          {/* Critério de Aceitação */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Critério de Aceitação (opcional)</label>
-            <input type="text" value={acceptanceCriteria} onChange={e => setAcceptanceCriteria(e.target.value)}
-              className="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg" />
           </div>
 
           {error && <p className="text-red-400 mb-4">{error}</p>}

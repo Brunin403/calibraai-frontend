@@ -14,14 +14,13 @@ export default function InstrumentForm({ onInstrumentCreated, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Novos campos
+  // Faixa de uso e nominal
   const [usageMin, setUsageMin] = useState('');
   const [usageMax, setUsageMax] = useState('');
   const [usageUnit, setUsageUnit] = useState('');
   const [nominalMin, setNominalMin] = useState('');
   const [nominalMax, setNominalMax] = useState('');
   const [nominalUnit, setNominalUnit] = useState('');
-  const [acceptanceCriteria, setAcceptanceCriteria] = useState('');
 
   useEffect(() => { loadSectors(); }, []);
 
@@ -68,14 +67,12 @@ export default function InstrumentForm({ onInstrumentCreated, onClose }) {
         tag, description, sector, type, operationalStatus,
         usageRange: usageMin || usageMax ? { min: parseFloat(usageMin) || 0, max: parseFloat(usageMax) || 0, unit: usageUnit } : undefined,
         nominalRange: nominalMin || nominalMax ? { min: parseFloat(nominalMin) || 0, max: parseFloat(nominalMax) || 0, unit: nominalUnit } : undefined,
-        acceptanceCriteria: acceptanceCriteria || undefined,
       };
       const res = await api.post('/instruments', payload);
       setTag(''); setDescription(''); setSector(''); setType('equipamento');
       setOperationalStatus('ativo'); setTagError(''); setTagValid(false);
       setUsageMin(''); setUsageMax(''); setUsageUnit('');
       setNominalMin(''); setNominalMax(''); setNominalUnit('');
-      setAcceptanceCriteria('');
       if (onInstrumentCreated) onInstrumentCreated(res.data);
       if (onClose) onClose();
     } catch (err) {
@@ -133,7 +130,7 @@ export default function InstrumentForm({ onInstrumentCreated, onClose }) {
         </div>
       </div>
 
-      {/* Novos campos: Faixa de Uso */}
+      {/* Faixa de Uso */}
       <div className="mb-4">
         <p className="text-sm font-medium mb-2">Faixa de Uso (opcional)</p>
         <div className="grid grid-cols-3 gap-2">
@@ -146,7 +143,7 @@ export default function InstrumentForm({ onInstrumentCreated, onClose }) {
         </div>
       </div>
 
-      {/* Novos campos: Faixa Nominal */}
+      {/* Faixa Nominal */}
       <div className="mb-4">
         <p className="text-sm font-medium mb-2">Faixa Nominal (opcional)</p>
         <div className="grid grid-cols-3 gap-2">
@@ -157,14 +154,6 @@ export default function InstrumentForm({ onInstrumentCreated, onClose }) {
           <input type="text" placeholder="Unidade" value={nominalUnit} onChange={e => setNominalUnit(e.target.value)}
             className="bg-dark-700 border border-dark-500 rounded px-2 py-1 text-sm" />
         </div>
-      </div>
-
-      {/* Critério de Aceitação */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Critério de Aceitação (opcional)</label>
-        <input type="text" value={acceptanceCriteria} onChange={e => setAcceptanceCriteria(e.target.value)}
-          placeholder="Ex: Erro máximo ≤ 0,5% do fundo de escala"
-          className="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
       {error && <p className="text-red-400 mb-4">{error}</p>}
