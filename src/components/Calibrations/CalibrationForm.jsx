@@ -11,6 +11,9 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
   const [maxError, setMaxError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [certificatePath, setCertificatePath] = useState('');
 
   const [groups, setGroups] = useState([
     {
@@ -19,6 +22,28 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
       points: [{ applied: '', read: '', error: '', uncertainty: '', ok: true }]
     }
   ]);
+
+    const handleFileChange = (e) => {
+  setFile(e.target.files[0]);
+};
+
+const uploadCertificate = async (calibrationId) => {
+  if (!file) return;
+  setUploading(true);
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post(`/calibrations/${calibrationId}/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    setCertificatePath(res.data.path);
+    setFile(null);
+  } catch (err) {
+    setError('Erro ao enviar certificado');
+  } finally {
+    setUploading(false);
+  }
+};
 
   const addGroup = () => {
     setGroups([...groups, {
@@ -96,6 +121,9 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
           }))
         }))
       };
+      const res = await api.post('/calibrations', payload);
+    if (file) await uploadCertificate(res.data._id);
+    onCreated();
       await api.post('/calibrations', payload);
       onCreated();
     } catch (err) {
@@ -269,8 +297,14 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
               {loading ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
+          <div>
+  <label className="block text-dark-400 mb-1">Certificado (PDF)</label>
+  <input type="file" accept=".pdf" onChange={handleFileChange}
+    className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1 text-xs" />
+</div>
         </form>
       </div>
     </div>
+    
   );
 }
