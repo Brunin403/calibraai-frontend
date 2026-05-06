@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import InstrumentDetail from '../components/Instruments/InstrumentDetail';
 
 export default function InstrumentsPage() {
-  const { user } = useAuth();
   const [instruments, setInstruments] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
