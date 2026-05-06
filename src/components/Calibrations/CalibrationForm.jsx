@@ -3,12 +3,12 @@ import api from '../../services/api';
 
 export default function CalibrationForm({ instrument, onClose, onCreated }) {
   const [date, setDate] = useState('');
-  const [result, setResult] = useState('aprovado');
   const [supplier, setSupplier] = useState('');
   const [certificateNumber, setCertificateNumber] = useState('');
   const [notes, setNotes] = useState('');
   const [acceptanceType, setAcceptanceType] = useState('text');
   const [acceptanceValue, setAcceptanceValue] = useState('');
+  const [maxError, setMaxError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -57,7 +57,6 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
     const point = updated[groupIndex].points[pointIndex];
     point[field] = value;
 
-    // Calcular erro automaticamente se aplicado e lido estiverem preenchidos
     if (field === 'applied' || field === 'read') {
       const applied = parseFloat(point.applied);
       const read = parseFloat(point.read);
@@ -77,13 +76,13 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
       const payload = {
         instrumentId: instrument._id,
         date,
-        result,
         supplier,
         certificateNumber,
         notes,
         acceptanceCriteria: {
           type: acceptanceType,
           value: acceptanceValue,
+          maxError: parseFloat(maxError) || null,
         },
         measurementGroups: groups.map(group => ({
           quantity: group.quantity,
@@ -119,26 +118,18 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
                 className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" required />
             </div>
             <div>
-              <label className="block text-dark-400 mb-1">Resultado</label>
-              <select value={result} onChange={e => setResult(e.target.value)}
-                className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1">
-                <option value="aprovado">Aprovado</option>
-                <option value="reprovado">Reprovado</option>
-                <option value="aprovado_com_restricao">Aprovado c/ restrição</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
               <label className="block text-dark-400 mb-1">Fornecedor</label>
               <input type="text" value={supplier} onChange={e => setSupplier(e.target.value)}
                 className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-dark-400 mb-1">Nº Certificado</label>
               <input type="text" value={certificateNumber} onChange={e => setCertificateNumber(e.target.value)}
                 className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
             </div>
+            <div></div>
           </div>
           <div>
             <label className="block text-dark-400 mb-1">Observações</label>
@@ -146,7 +137,7 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
               className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
           </div>
 
-          {/* Critério de Aceitação (híbrido) */}
+          {/* Critério de Aceitação */}
           <div className="border-t border-dark-600 pt-3">
             <h4 className="text-sm font-semibold mb-2">Critério de Aceitação</h4>
             <div className="grid grid-cols-2 gap-3">
@@ -155,17 +146,26 @@ export default function CalibrationForm({ instrument, onClose, onCreated }) {
                 <select value={acceptanceType} onChange={e => setAcceptanceType(e.target.value)}
                   className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1">
                   <option value="text">Texto livre</option>
-                  <option value="maxError" disabled>Erro máximo (futuro)</option>
-                  <option value="percentage" disabled>Percentual (futuro)</option>
+                  <option value="maxError">Erro máximo (numérico)</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-dark-400 mb-1">Valor / Descrição</label>
-                <input type="text" value={acceptanceValue}
-                  onChange={e => setAcceptanceValue(e.target.value)}
-                  placeholder="Ex: Erro ≤ 1,5%"
-                  className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
-              </div>
+              {acceptanceType === 'text' ? (
+                <div>
+                  <label className="block text-dark-400 mb-1">Descrição</label>
+                  <input type="text" value={acceptanceValue}
+                    onChange={e => setAcceptanceValue(e.target.value)}
+                    placeholder="Ex: Erro ≤ 1,5%"
+                    className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-dark-400 mb-1">Erro máximo permitido</label>
+                  <input type="number" step="any" value={maxError}
+                    onChange={e => setMaxError(e.target.value)}
+                    placeholder="Ex: 1.5"
+                    className="w-full bg-dark-700 border-dark-500 rounded px-2 py-1" />
+                </div>
+              )}
             </div>
           </div>
 
